@@ -137,7 +137,7 @@ void process_requests(int main_socket, struct sockaddr_in* address)
             if (FD_ISSET(fd, &readfds))
             {
                 getpeername(fd, (struct sockaddr*)address, (socklen_t*)&addrlen);
-                if ((val_read = read(fd, buffer, 2048)) == 0)
+                if ((val_read = read(fd, buffer, 1024)) == 0)
                 {
                     fprintf(stdout, "Disconnected socket with ip %s, port %d.\n",
                             inet_ntoa(address->sin_addr), ntohs(address->sin_port));
@@ -148,13 +148,20 @@ void process_requests(int main_socket, struct sockaddr_in* address)
                 else
                 {
                     buffer[val_read] = '\0';
+                    if (buffer[val_read - 1] != '\n')
+                    {
+                        buffer[val_read + 1] = '\0';
+                        buffer[val_read] = '\n';
+                    }
+
                     length = snprintf(NULL, 0, "User %d: %s\n", i, buffer);
                     snprintf(temp_buffer, length ,"User %d: %s\n", i, buffer);
-                    
+                    fprintf(stdout, "%s", temp_buffer);
+
                     for(j = 0; j < MAX_CLIENTS; ++j)
                     {
                         temp_fd = client_socket[j];
-                        if (i != j && temp_fd > 0)
+                        if (temp_fd > 0)
                         {
                             send(temp_fd, temp_buffer, strlen(temp_buffer), 0);
                         }
